@@ -40,21 +40,15 @@ The page shows the chat, an on-screen keyboard that lights up each key Jev press
 
 ## The cost of saying "hi"
 
-Measured with say-hi on 2026-09-30. Each LLM is priced for the **same input tokens JEV was sent** (the same conversation, instructions and options), plus a short ~15-token reply, so every row compares like with like.
+Measured with say-hi on 2026-09-30: Jev typed "Hi" in 4 requests (plan, H, i, SEND) using 10,639 input tokens. Each LLM is priced for the same 10,639 input tokens plus a short ~15-token reply.
 
-| Work (measured JEV input) | **JEV** ¹ | Claude Opus 5.5 | OpenAI GPT-5.6 Sol | xAI Grok 4.5 |
+| | **JEV** | Claude Opus 5.5 | OpenAI GPT-5.6 Sol | xAI Grok 4.5 |
 |---|---|---|---|---|
 | Price per 1M tokens (in / out) | $0.042 / free | $4 / $20 | $4 / $20 | $2 / $6 |
-| **"hi" typed on the keyboard**: 4 requests, 10,639 tokens in | **$0.00045** | $0.0429 (**96×**) | $0.0429 (**96×**) | $0.0214 (**48×**) |
-| **"hi" as a canned reply**: 1 request picking from 10 replies, 479 tokens in | **$0.00002** | $0.0022 (**110×**) | $0.0022 (**110×**) | $0.0011 (**52×**) |
-| **"what is 3x5" → "15"**: 39 requests, 143,640 tokens in | **$0.0060** | $0.575 (**95×**) | $0.575 (**95×**) | $0.287 (**48×**) |
-| 1,000 "hi"s on the keyboard | **$0.45** | $42.86 | $42.86 | $21.37 |
+| One "hi" | **$0.00045** | $0.0429 | $0.0429 | $0.0214 |
+| 1,000 "hi"s | **$0.45** | $42.86 | $42.86 | $21.37 |
 
-¹ TypeSafe's published JEV price: $0.042 per million input tokens, and output is free. JEV token counts are the `usage` the API returned. For the LLMs, ×N is how many times JEV's cost. Opus 5.5 always thinks, which adds output tokens at $20/M on top of these figures.
-
-**For the same work, JEV is about 95–110× cheaper than Opus 5.5 or GPT-5.6 Sol and about 50× cheaper than Grok 4.5.** Its input costs $0.042 per million instead of $2–4, and its output is free, where the others charge $6–20 per million. Output hardly matters for a "hi"; the gap comes from input price.
-
-The keyboard is still the expensive way to use JEV. Every keystroke re-sends the whole conversation plus ~85 key options with their previews and spelling hints (about 3,300 tokens per key). One decision per message, like picking a canned reply, costs 20× less than typing "hi".
+TypeSafe's published JEV price is $0.042 per million input tokens, and output is free. The JEV token count is the `usage` the API returned. Opus 5.5 always thinks, which adds output tokens on top of its figure.
 
 Prices as of 2026-09-30: [Anthropic](https://www.anthropic.com/pricing), [OpenAI](https://developers.openai.com/api/docs/pricing), [xAI](https://docs.x.ai/docs/models).
 
