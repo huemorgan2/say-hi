@@ -40,23 +40,21 @@ The page shows the chat, an on-screen keyboard that lights up each key Jev press
 
 ## The cost of saying "hi"
 
-Measured with say-hi on 2026-09-30, and compared with a normal chat request to three LLMs.
+Measured with say-hi on 2026-09-30. Each LLM is priced for the **same input tokens JEV was sent** (the same conversation, instructions and options), plus a short ~15-token reply, so every row compares like with like.
 
-| Model | Price per 1M tokens (input / output) | Requests for "hi" | Tokens for "hi" | Cost of one "hi" | 1,000 "hi"s |
-|---|---|---|---|---|---|
-| **JEV** typing it on the keyboard (say-hi, measured) | $0.042 / not billed ¹ | 4 (plan + H, i, SEND) | 10,639 in | **$0.00045** | **$0.45** |
-| **JEV** picking a canned reply (one decision from 10 replies, measured) | $0.042 / free ¹ | 1 | 479 in | **$0.00002** | **$0.02** |
-| Claude Opus 5.5 | $4 / $20 | 1 | ~50 in + ~15 out ² | **$0.0005** (up to $0.0015 with thinking ³) | $0.50 – $1.50 |
-| OpenAI GPT-5.6 Sol (same tier as Opus 5.5) | $4 / $20 | 1 | ~50 in + ~15 out ² | **$0.0005** | $0.50 |
-| xAI Grok 4.5 | $2 / $6 | 1 | ~50 in + ~15 out ² | **$0.00019** | $0.19 |
+| Work (measured JEV input) | **JEV** ¹ | Claude Opus 5.5 | OpenAI GPT-5.6 Sol | xAI Grok 4.5 |
+|---|---|---|---|---|
+| Price per 1M tokens (in / out) | $0.042 / free | $4 / $20 | $4 / $20 | $2 / $6 |
+| **"hi" typed on the keyboard**: 4 requests, 10,639 tokens in | **$0.00045** | $0.0429 (**96×**) | $0.0429 (**96×**) | $0.0214 (**48×**) |
+| **"hi" as a canned reply**: 1 request picking from 10 replies, 479 tokens in | **$0.00002** | $0.0022 (**110×**) | $0.0022 (**110×**) | $0.0011 (**52×**) |
+| **"what is 3x5" → "15"**: 39 requests, 143,640 tokens in | **$0.0060** | $0.575 (**95×**) | $0.575 (**95×**) | $0.287 (**48×**) |
+| 1,000 "hi"s on the keyboard | **$0.45** | $42.86 | $42.86 | $21.37 |
 
-¹ TypeSafe's published JEV price: $0.042 per million input tokens; output is free. Token counts are the `usage` the API returned.
-² Assumed chat request: a short system prompt plus "hi" (~50 input tokens), and a reply like "Hi! How can I help you today?" (~15 output tokens).
-³ Opus 5.5 always thinks, even at low effort. Assuming ~50 thinking tokens for "hi" gives the upper figure.
+¹ TypeSafe's published JEV price: $0.042 per million input tokens, and output is free. JEV token counts are the `usage` the API returned. For the LLMs, ×N is how many times JEV's cost. Opus 5.5 always thinks, which adds output tokens at $20/M on top of these figures.
 
-**Why isn't JEV 1000× cheaper here?** Per token it is very cheap: input is ~95× cheaper than Opus 5.5 or GPT-5.6 Sol ($0.042 vs $4 per million), and output is free, where Opus charges $20 per million. The cost is in how many tokens the keyboard sends. Every keystroke is a separate request that re-sends the whole conversation plus ~85 key options with their previews and spelling hints: about 3,300 input tokens per key. So "hi" (plan + H + i + SEND) is ~10,600 tokens and lands at LLM-like cost.
+**For the same work, JEV is about 95–110× cheaper than Opus 5.5 or GPT-5.6 Sol and about 50× cheaper than Grok 4.5.** Its input costs $0.042 per million instead of $2–4, and its output is free, where the others charge $6–20 per million. Output hardly matters for a "hi"; the gap comes from input price.
 
-Used as it's designed, one decision per message, JEV is much cheaper. Picking a canned reply to "hi" from 10 options took one request, 479 tokens and **$0.00002**. That's ~25× cheaper than one Opus 5.5 or GPT-5.6 Sol call, ~75× cheaper than Opus with thinking, and ~10× cheaper than Grok 4.5. A factual answer through the keyboard costs more because of the answer tournament: "what is 3x5" took 39 requests, ~144k tokens, **~$0.006** and ~2 s, versus ~$0.0005 for one LLM call.
+The keyboard is still the expensive way to use JEV. Every keystroke re-sends the whole conversation plus ~85 key options with their previews and spelling hints (about 3,300 tokens per key). One decision per message, like picking a canned reply, costs 20× less than typing "hi".
 
 Prices as of 2026-09-30: [Anthropic](https://www.anthropic.com/pricing), [OpenAI](https://developers.openai.com/api/docs/pricing), [xAI](https://docs.x.ai/docs/models).
 
