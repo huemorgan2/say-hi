@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat with Jev</title>
+<style>
+  :root { --bg:#f6f5f2; --panel:#fff; --ink:#1d1d1f; --muted:#6b6b70; --line:#dedcd6; --user:#2f5cff; --jev:#ecebe6; --hit:#ffb020; --err:#b3261e; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#141416; --panel:#1d1d20; --ink:#ececef; --muted:#9a9aa2; --line:#333338; --user:#4b72ff; --jev:#2a2a2f; --hit:#ffb020; --err:#ff8a80; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.45 system-ui, -apple-system, sans-serif; }
+  .layout { max-width:1400px; margin:0 auto; padding:16px; display:grid; grid-template-columns:minmax(0,760px) minmax(0,1fr); gap:16px; align-items:start; }
+  main { display:flex; flex-direction:column; gap:12px; min-width:0; }
+  #calls { position:sticky; top:16px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px; display:flex; flex-direction:column; gap:10px; max-height:calc(100vh - 32px); min-width:0; overflow:hidden; }
+  #calls h2 { font-size:15px; margin:0; display:flex; justify-content:space-between; gap:8px; }
+  #calls h2 span { color:var(--muted); font-weight:400; font-size:12px; }
+  #chips { display:flex; flex-direction:column; gap:8px; overflow-y:auto; max-height:34vh; flex-shrink:0; }
+  .turn-label { font-size:12px; color:var(--muted); margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chip-row { display:flex; flex-wrap:wrap; gap:3px; }
+  .chip { min-width:24px; height:26px; padding:0 5px; border:1px solid var(--line); border-radius:5px; background:var(--bg); color:var(--ink); font:12px ui-monospace, monospace; cursor:pointer; }
+  .chip.plan { background:var(--jev); padding:0 8px; }
+  .chip.err { border-color:var(--err); color:var(--err); }
+  .chip.sel { background:var(--user); color:#fff; border-color:var(--user); }
+  #detail { overflow:auto; font-size:12px; border-top:1px solid var(--line); padding-top:8px; min-height:0; flex:1; }
+  #detail .empty { color:var(--muted); }
+  #detail h3 { font-size:13px; margin:10px 0 4px; }
+  #detail pre { margin:0; padding:8px; background:var(--bg); border-radius:8px; white-space:pre-wrap; word-break:break-word; font:11px/1.4 ui-monospace, monospace; }
+  .probs { display:grid; grid-template-columns:auto 1fr auto; gap:2px 8px; align-items:center; }
+  .bar { height:8px; background:var(--user); border-radius:4px; }
+  @media (max-width:980px) { .layout { grid-template-columns:minmax(0,1fr); } #calls { position:static; max-height:none; } }
+  header { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  h1 { font-size:20px; margin:0; }
+  #meta { color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums; }
+  #config-error { display:none; background:var(--err); color:#fff; padding:12px 14px; border-radius:10px; }
+  #log { flex:1; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; overflow-y:auto; min-height:260px; max-height:48vh; display:flex; flex-direction:column; gap:8px; }
+  .msg { max-width:85%; padding:8px 12px; border-radius:14px; white-space:pre-wrap; word-wrap:break-word; }
+  .user { align-self:flex-end; background:var(--user); color:#fff; }
+  .jev { align-self:flex-start; background:var(--jev); }
+  .jev.typing::after { content:'▍'; animation:blink 1s steps(1) infinite; }
+  .note { align-self:flex-start; color:var(--muted); font-size:12px; margin-top:-4px; }
+  .note.err { color:var(--err); }
+  .note.stats { font-variant-numeric:tabular-nums; }
+  @keyframes blink { 50% { opacity:0; } }
+  form { display:flex; gap:8px; }
+  textarea { flex:1; resize:none; font:inherit; padding:10px; border-radius:10px; border:1px solid var(--line); background:var(--panel); color:var(--ink); }
+  button { font:inherit; padding:0 16px; border-radius:10px; border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer; }
+  button.primary { background:var(--user); color:#fff; border-color:var(--user); }
+  button.stop { background:var(--err); color:#fff; border-color:var(--err); }
+  button:disabled { opacity:.5; cursor:default; }
+  #kbd { display:flex; flex-direction:column; gap:4px; user-select:none; }
+  .row { display:flex; gap:4px; justify-content:center; flex-wrap:wrap; }
+  .k { min-width:28px; height:30px; padding:0 6px; display:flex; align-items:center; justify-content:center; border:1px solid var(--line); border-radius:6px; background:var(--panel); font:13px ui-monospace, monospace; transition:background .25s, transform .1s; }
+  .k.wide { min-width:64px; } .k.space { min-width:240px; }
+  .k.hit { background:var(--hit); color:#000; transform:translateY(1px); transition:none; }
+  @media (max-width:520px) { .k { min-width:22px; padding:0 3px; font-size:12px; } .k.space { min-width:160px; } }
+</style>
+</head>
+<body>
+<div class="layout">
+<main>
+  <header><h1>Chat with Jev</h1><span id="meta"></span></header>
+  <div id="config-error"></div>
+  <div id="log" aria-live="polite"></div>
+  <form id="form">
+    <textarea id="input" rows="2" placeholder="Say something to Jev…" autofocus></textarea>
+    <button id="send" class="primary" type="submit">Send</button>
+    <button id="stop" class="stop" type="button" hidden>Stop</button>
+  </form>
+  <div id="kbd"></div>
+</main>
+<aside id="calls" aria-label="JEV calls">
+  <h2>JEV calls <span id="calls-count">0 requests</span></h2>
+  <div id="chips"></div>
+  <div id="detail"><p class="empty">Each chip is one JEV request (one letter). Click it to see the exact request sent and Jev's answer.</p></div>
+</aside>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+const history = [];
+let config = null, controller = null;
+const calls = [];
+let chipRow = null;
+
+const CHIP_LABEL = { space: '␣', backspace: '⌫', newline: '⏎', send: 'SEND' };
+function startTurn(text) {
+  const group = document.createElement('div');
+  const label = document.createElement('div'); label.className = 'turn-label'; label.textContent = `you: ${text}`;
+  chipRow = document.createElement('div'); chipRow.className = 'chip-row';
+  group.append(label, chipRow); $('chips').append(group);
+}
+function addCall(call) {
+  const i = calls.push(call) - 1;
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'chip' + (call.kind !== 'key' ? ' plan' : '');
+  chip.textContent = call.kind !== 'key' ? `${call.kind}: ${call.choice}` : (CHIP_LABEL[call.choice] ?? call.label);
+  chip.title = `request ${i + 1}`;
+  chip.onclick = () => showCall(i, chip);
+  chipRow.append(chip);
+  $('calls-count').textContent = `${calls.length} request${calls.length === 1 ? '' : 's'}`;
+  $('chips').scrollTop = 1e9;
+}
+function showCall(i, chip) {
+  document.querySelectorAll('.chip.sel').forEach(c => c.classList.remove('sel'));
+  chip.classList.add('sel');
+  const c = calls[i], answer = c.response?.answers?.[c.kind] || {};
+  const d = $('detail'); d.replaceChildren();
+  const h = (tag, text) => { const el = document.createElement(tag); el.textContent = text; d.append(el); return el; };
+  h('h3', `Request ${i + 1}: ${c.kind === 'key' ? 'keystroke' : c.kind} → chose "${answer.choice}" (confidence ${answer.confidence ?? '?'})`);
+  if (c.kind === 'answer') h('div', `Final round: the winners of ${c.groups} groups of up to 250 words each (those group requests are in the log).`);
+  if (c.kind === 'key') h('div', `Reply typed before this key: ${JSON.stringify(c.request.state.reply_typed_so_far)}`);
+  const top = Object.entries(answer.probabilities || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  if (top.length) {
+    h('h3', 'Top options');
+    const grid = document.createElement('div'); grid.className = 'probs';
+    for (const [k, v] of top) {
+      const name = document.createElement('code'); name.textContent = k;
+      const bar = document.createElement('div'); bar.className = 'bar'; bar.style.width = `${Math.max(2, v * 100)}%`;
+      const pct = document.createElement('span'); pct.textContent = `${Math.round(v * 100)}%`;
+      grid.append(name, bar, pct);
+    }
+    d.append(grid);
+  }
+  h('h3', 'Request sent to JEV');
+  h('pre', JSON.stringify(c.request, null, 2));
+  h('h3', 'Response from JEV');
+  h('pre', JSON.stringify(c.response, null, 2));
+  d.scrollTop = 0;
+}
+
+const ROWS = [
+  ['digit_1','digit_2','digit_3','digit_4','digit_5','digit_6','digit_7','digit_8','digit_9','digit_0','backspace'],
+  [...'qwertyuiop'],
+  [...'asdfghjkl','newline'],
+  ['shift',...'zxcvbnm','send'],
+  ['period','comma','question','exclamation','apostrophe','quote','hyphen','colon','semicolon','lparen','rparen'],
+  ['slash','at','hash','ampersand','plus','equals','asterisk','percent','dollar','underscore'],
+  ['space'],
+];
+
+function buildKeyboard(labels) {
+  for (const row of ROWS) {
+    const div = document.createElement('div'); div.className = 'row';
+    for (const id of row) {
+      const k = document.createElement('div');
+      k.className = 'k' + (['backspace','newline','shift','send'].includes(id) ? ' wide' : '') + (id === 'space' ? ' space' : '');
+      k.dataset.key = id; k.textContent = id === 'shift' ? 'shift' : labels[id];
+      div.append(k);
+    }
+    $('kbd').append(div);
+  }
+}
+
+function flash(id) {
+  const ids = id.startsWith('shift_') ? ['shift', id.slice(6)] : [id];
+  for (const k of ids) {
+    const el = document.querySelector(`[data-key="${k}"]`);
+    if (!el) continue;
+    el.classList.add('hit'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('hit'), 120);
+  }
+}
+
+function add(cls, text) { const el = document.createElement('div'); el.className = cls; el.textContent = text; $('log').append(el); $('log').scrollTop = 1e9; return el; }
+function meta(s) { $('meta').textContent = s; }
+function fmt(r) { return `${r.keystrokes} keys · ${r.inputTokens.toLocaleString()} in-tokens · $${r.costUSD.toFixed(4)}`; }
+
+function configError(msg) { $('config-error').textContent = msg; $('config-error').style.display = 'block'; $('send').disabled = true; }
+
+async function init() {
+  try { config = await (await fetch('/api/config')).json(); } catch { return configError('Cannot reach the Jev chat server.'); }
+  buildKeyboard(config.keys);
+  meta(`${config.model} · cap ${config.maxKeystrokes} keys / $${config.budgetUSD} per reply`);
+  if (!config.keyConfigured) configError('Configuration error: TYPESAFE_API_KEY is not set on the server. Add it to .env (see .env.example) and restart with npm start.');
+}
+
+function busy(on) { $('send').hidden = on; $('stop').hidden = !on; $('input').disabled = on; }
+
+$('input').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('form').requestSubmit(); } });
+$('stop').onclick = () => controller?.abort();
+
+$('form').onsubmit = async e => {
+  e.preventDefault();
+  const text = $('input').value.trim();
+  if (!text || controller || !config?.keyConfigured) return;
+  $('input').value = '';
+  history.push({ role: 'user', text }); add('msg user', text); startTurn(text);
+  const bubble = add('msg jev typing', '');
+  // Live per-reply stats under the bubble: elapsed time, keystrokes, cost.
+  const stats = add('note stats', ''), started = performance.now();
+  const showStats = () => { stats.textContent = `${((performance.now() - started) / 1000).toFixed(1)}s · ${last.keystrokes} keys · $${last.costUSD.toFixed(4)}`; };
+  const timer = setInterval(showStats, 100);
+  controller = new AbortController(); busy(true);
+  let last = { text: '', keystrokes: 0, inputTokens: 0, costUSD: 0 }, outcome = null;
+  try {
+    const res = await fetch('/api/reply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ history }), signal: controller.signal });
+    if (!res.ok) { const j = await res.json().catch(() => ({})); throw new Error(j.error || `HTTP ${res.status}`); }
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value;
+      let i;
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        const event = chunk.match(/^event: (.*)$/m)?.[1], data = JSON.parse(chunk.match(/^data: (.*)$/m)?.[1] || 'null');
+        if (event === 'plan') { bubble.title = `goal: ${data.goal}`; add('note', `goal: ${data.goal}`); stats.after($('log').lastChild); addCall({ kind: 'plan', choice: data.goal, request: data.request, response: data.response }); }
+        else if (event === 'answer') { add('note', data.answer === 'NONE' ? `answer: none of ${data.candidates} words fit, typing it` : `answer: ${data.answer} (picked from ${data.candidates} words in ${data.groups} groups)`); stats.after($('log').lastChild); if (data.request) addCall({ kind: 'answer', choice: data.answer, groups: data.groups, request: data.request, response: data.response }); }
+        else if (event === 'key') { addCall({ kind: 'key', choice: data.key, label: data.label, request: data.request, response: data.response }); flash(data.key); last = data; bubble.textContent = data.text; meta(fmt(data)); $('log').scrollTop = 1e9; }
+        else if (event === 'done') { outcome = data; last = data; }
+        else if (event === 'error') { outcome = { reason: 'error', ...last, ...data }; }
+      }
+    }
+  } catch (err) {
+    outcome = err.name === 'AbortError' ? { reason: 'stopped', ...last } : { reason: 'error', ...last, error: err.message };
+  }
+  bubble.classList.remove('typing');
+  bubble.textContent = last.text || '…';
+  const notes = { cap: 'stopped at the keystroke cap', budget: 'stopped at the per-reply spend cap', stopped: 'stopped by you', error: `error: ${outcome?.error}` };
+  if (outcome?.reason !== 'send') add('note' + (outcome?.reason === 'error' ? ' err' : ''), notes[outcome?.reason] || 'stream ended without SEND');
+  if (last.text) history.push({ role: 'jev', text: last.text });
+  clearInterval(timer); showStats();
+  meta(`last reply: ${fmt(last)} · ${((performance.now() - started) / 1000).toFixed(1)}s`);
+  controller = null; busy(false); $('input').focus();
+};
+
+init();
+</script>
+</body>
+</html>

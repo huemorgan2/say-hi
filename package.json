@@ -1,0 +1,23 @@
+{
+  "name": "say-hi",
+  "private": true,
+  "type": "module",
+  "description": "Try to get JEV (TypeSafe) to talk: it types every reply one keyboard key at a time.",
+  "engines": {
+    "node": ">=21.7"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js",
+    "eval": "node eval/live-eval.mjs"
+  },
+  "dependencies": {
+    "predictionary": "1.6.0"
+  },
+  "version": "0.1.0",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/huemorgan2/say-hi.git"
+  }
+}
