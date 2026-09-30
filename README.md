@@ -44,16 +44,19 @@ Measured with say-hi on 2026-09-30, and compared with a normal chat request to t
 
 | Model | Price per 1M tokens (input / output) | Requests for "hi" | Tokens for "hi" | Cost of one "hi" | 1,000 "hi"s |
 |---|---|---|---|---|---|
-| **JEV** `jev-1.13.0` via say-hi (measured) | $0.042 / not billed ¹ | 4 (plan + H, i, SEND) | 10,639 in | **$0.00045** | **$0.45** |
+| **JEV** typing it on the keyboard (say-hi, measured) | $0.042 / not billed ¹ | 4 (plan + H, i, SEND) | 10,639 in | **$0.00045** | **$0.45** |
+| **JEV** picking a canned reply (one decision from 10 replies, measured) | $0.042 / free ¹ | 1 | 479 in | **$0.00002** | **$0.02** |
 | Claude Opus 5.5 | $4 / $20 | 1 | ~50 in + ~15 out ² | **$0.0005** (up to $0.0015 with thinking ³) | $0.50 – $1.50 |
 | OpenAI GPT-5.6 Sol (same tier as Opus 5.5) | $4 / $20 | 1 | ~50 in + ~15 out ² | **$0.0005** | $0.50 |
 | xAI Grok 4.5 | $2 / $6 | 1 | ~50 in + ~15 out ² | **$0.00019** | $0.19 |
 
-¹ The JEV price is the one this project assumes: 42 micro-T per input token = $0.042 per million input tokens. The HTTP API reports usage after each call; check TypeSafe's current rates.
+¹ TypeSafe's published JEV price: $0.042 per million input tokens; output is free. Token counts are the `usage` the API returned.
 ² Assumed chat request: a short system prompt plus "hi" (~50 input tokens), and a reply like "Hi! How can I help you today?" (~15 output tokens).
 ³ Opus 5.5 always thinks, even at low effort. Assuming ~50 thinking tokens for "hi" gives the upper figure.
 
-Per token, JEV is roughly 100× cheaper than Opus 5.5 or GPT-5.6 Sol. But say-hi makes one request per key, and each request carries the whole conversation plus ~85 options. So "hi" ends up costing about the same as a single LLM call: roughly Opus/GPT level, and about 2× Grok 4.5. A factual answer costs more because of the answer tournament: "what is 3x5" took 39 requests, ~144k tokens, **~$0.006** and ~2 s, versus ~$0.0005 for one LLM call. Latency for "hi" was ~1.6 s (4 sequential requests).
+**Why isn't JEV 1000× cheaper here?** Per token it is very cheap: input is ~95× cheaper than Opus 5.5 or GPT-5.6 Sol ($0.042 vs $4 per million), and output is free, where Opus charges $20 per million. The cost is in how many tokens the keyboard sends. Every keystroke is a separate request that re-sends the whole conversation plus ~85 key options with their previews and spelling hints: about 3,300 input tokens per key. So "hi" (plan + H + i + SEND) is ~10,600 tokens and lands at LLM-like cost.
+
+Used as it's designed, one decision per message, JEV is much cheaper. Picking a canned reply to "hi" from 10 options took one request, 479 tokens and **$0.00002**. That's ~25× cheaper than one Opus 5.5 or GPT-5.6 Sol call, ~75× cheaper than Opus with thinking, and ~10× cheaper than Grok 4.5. A factual answer through the keyboard costs more because of the answer tournament: "what is 3x5" took 39 requests, ~144k tokens, **~$0.006** and ~2 s, versus ~$0.0005 for one LLM call.
 
 Prices as of 2026-09-30: [Anthropic](https://www.anthropic.com/pricing), [OpenAI](https://developers.openai.com/api/docs/pricing), [xAI](https://docs.x.ai/docs/models).
 
