@@ -42,11 +42,11 @@ The page shows the chat, an on-screen keyboard that lights up each key Jev press
 
 Measured with say-hi on 2026-09-30: Jev typed "Hi" in 4 requests (plan, H, i, SEND) using 10,639 input tokens. Each LLM is priced for the same 10,639 input tokens plus a short ~15-token reply.
 
-| | **JEV** | Claude Opus 5.5 | OpenAI GPT-5.6 Sol | xAI Grok 4.5 |
+| | JEV | Claude Opus 5.5 | OpenAI GPT-5.6 Sol | xAI Grok 4.5 |
 |---|---|---|---|---|
 | Price per 1M tokens (in / out) | $0.042 / free | $4 / $20 | $4 / $20 | $2 / $6 |
-| One "hi" | **$0.00045** | $0.0429 | $0.0429 | $0.0214 |
-| 1,000 "hi"s | **$0.45** | $42.86 | $42.86 | $21.37 |
+| One "hi" | $0.00045 | $0.0429 | $0.0429 | $0.0214 |
+| 1,000 "hi"s | $0.45 | $42.86 | $42.86 | $21.37 |
 
 TypeSafe's published JEV price is $0.042 per million input tokens, and output is free. The JEV token count is the `usage` the API returned. Opus 5.5 always thinks, which adds output tokens on top of its figure.
 
